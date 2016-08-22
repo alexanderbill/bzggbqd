@@ -25,34 +25,16 @@
         <RadioButton android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/radioYG" android:text="义工"></RadioButton>
     </RadioGroup>
 
-    <LinearLayout
+    <EditText
+        android:id="@+id/dates"
+        android:background="#ccc"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
-        android:orientation="horizontal">
-
-        <EditText
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
-            android:padding="13dp"
-            android:id="@+id/edit_total"
-            android:background="#ccc"
-            android:hint="在此搜索并签到"
-            android:gravity="top"
-            />
-
-        <Button
-            android:id="@+id/clear"
-            android:background="@color/button_selector"
-            android:layout_marginLeft="10dp"
-            android:text="清空" android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-    </LinearLayout>
-
-    <ListView
-        android:id="@+id/list"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"></ListView>
+        android:layout_height="100dp" />
+    
+    <Button
+        android:layout_marginTop="10dp"
+        android:id="@+id/export"
+        android:background="@color/button_selector"
+        android:text="导出" android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 </LinearLayout>

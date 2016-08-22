@@ -1,5 +1,6 @@
 package com.yunshipei.signin;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -24,6 +25,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
+import org.w3c.dom.Text;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,7 +36,7 @@ import java.util.ArrayList;
 /**
  * Created by ubuntu on 16-8-1.
  */
-public class TotalActivity extends AppCompatActivity {
+public class TotalActivity extends Activity {
     private final int FILE_SELECT_CODE = 10;
     private EditText et;
 
@@ -50,12 +52,15 @@ public class TotalActivity extends AppCompatActivity {
                 String[] lines = text.split("\n");
                 for (int i = 0; i < lines.length; i++) {
                     String line = lines[i];
+                    if (TextUtils.isEmpty(line)) {
+                        continue;
+                    }
                     String[] records = line.split("\\s+");
-                    if (records.length > 3
+                    if (records.length > 0
                             && PinyinHelper.getInstance().isHanzi(records[0])
-                            && (records[1].compareTo("男") == 0 || records[1].compareTo("女") == 0)
-                            && records[0].length() <= 4 && records[0].length() > 1
-                            && PinyinHelper.getInstance().isPhone(records[2])) {
+                            //&& (records[1].compareTo("男") == 0 || records[1].compareTo("女") == 0)
+                            && records[0].length() <= 4 && records[0].length() > 1) {
+                            //&& PinyinHelper.getInstance().isPhone(records[2])) {
 
                     } else {
                         findViewById(R.id.totalin).setEnabled(false);
@@ -73,7 +78,8 @@ public class TotalActivity extends AppCompatActivity {
         findViewById(R.id.openfile).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showFileChooser();
+                // showFileChooser();
+                doRead("/sdcard/bz.xls");
             }
         });
 
@@ -153,9 +159,9 @@ public class TotalActivity extends AppCompatActivity {
         String remains = "";
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
-            String[] records = line.split("\\s+");
-            if (!arrayList.contains(records[0] + records[1] + records[2])) {
-                MainActivity.db.insertContact(records[0], records[1], records[2], records[3], type, "ALL");
+            String[] records = line.split(" ");
+            if (!arrayList.contains(records[0])) {
+                MainActivity.db.insertContact(records[0], "", "", "", type, "ALL");
             } else {
                 remains += line + " 记录重复\n";
             }
@@ -173,49 +179,52 @@ public class TotalActivity extends AppCompatActivity {
                     Uri uri = data.getData();
                     String path = FileUtils.getPath(this, uri);
                     Log.d("leizhou", path);
-
-                    try {
-                        String result = "";
-                        HSSFWorkbook wb = new HSSFWorkbook(new FileInputStream(path));
-                        Sheet sheet1 = wb.getSheetAt(0);
-                        for (Row row : sheet1) {
-                            int i = 0;
-                            String r1 = "";
-                            for (Cell cell : row) {
-                                if (i > 3) {
-                                    break;
-                                }
-
-                                CellReference cellRef = new CellReference(row.getRowNum(), cell.getColumnIndex());
-
-                                switch (cell.getCellType()) {
-                                    case Cell.CELL_TYPE_STRING:
-                                        r1 += " " + cell.getRichStringCellValue().getString();
-                                        break;
-                                    case Cell.CELL_TYPE_NUMERIC:
-                                        if (DateUtil.isCellDateFormatted(cell)) {
-                                            r1 += " " + String.valueOf(cell.getDateCellValue());
-                                        } else {
-                                            double phone = cell.getNumericCellValue();
-                                            r1 += " " + new DecimalFormat("###").format(phone);
-                                        }
-                                        break;
-                                    default:
-                                        System.out.println();
-                                }
-                                i++;
-                            }
-                            result += r1.substring(1) + "\n";
-                        }
-                        et.setText(result);
-                    } catch (Exception e) {
-
-                    }
-
+                    doRead(path);
                 }
                 break;
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void doRead(String path) {
+
+        try {
+            String result = "";
+            HSSFWorkbook wb = new HSSFWorkbook(new FileInputStream(path));
+            Sheet sheet1 = wb.getSheetAt(0);
+            for (Row row : sheet1) {
+                int i = 0;
+                String r1 = "";
+                for (Cell cell : row) {
+                    if (i > 3) {
+                        break;
+                    }
+
+                    CellReference cellRef = new CellReference(row.getRowNum(), cell.getColumnIndex());
+
+                    switch (cell.getCellType()) {
+                        case Cell.CELL_TYPE_STRING:
+                            r1 += " " + cell.getRichStringCellValue().getString();
+                            break;
+                        case Cell.CELL_TYPE_NUMERIC:
+                            if (DateUtil.isCellDateFormatted(cell)) {
+                                r1 += " " + String.valueOf(cell.getDateCellValue());
+                            } else {
+                                double phone = cell.getNumericCellValue();
+                                r1 += " " + new DecimalFormat("###").format(phone);
+                            }
+                            break;
+                        default:
+                            System.out.println();
+                    }
+                    i++;
+                }
+                result += r1.substring(1) + "\n";
+            }
+            et.setText(result);
+        } catch (Exception e) {
+            Log.d("leizhou", e.getStackTrace().toString());
+        }
     }
 
     private void showFileChooser() {

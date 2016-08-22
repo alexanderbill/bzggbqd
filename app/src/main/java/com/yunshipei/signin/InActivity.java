@@ -1,5 +1,6 @@
 package com.yunshipei.signin;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.DialogInterface;
@@ -36,7 +37,7 @@ import java.util.Locale;
 /**
  * Created by ubuntu on 16-8-1.
  */
-public class InActivity extends AppCompatActivity {
+public class InActivity extends Activity {
     private final int FILE_SELECT_CODE = 10;
     private String date = "";
     private EditText et;
@@ -71,7 +72,8 @@ public class InActivity extends AppCompatActivity {
         findViewById(R.id.openfile).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showFileChooser();
+                // showFileChooser();
+                doRead("/sdcard/bz.xls");
             }
         });
 
@@ -84,11 +86,11 @@ public class InActivity extends AppCompatActivity {
                 for (int i = 0; i < lines.length; i++) {
                     String line = lines[i];
                     String[] records = line.split("\\s+");
-                    if (records.length > 3
+                    if (records.length > 0
                             && PinyinHelper.getInstance().isHanzi(records[0])
-                            && (records[1].compareTo("男") == 0 || records[1].compareTo("女") == 0)
-                            && records[0].length() <= 4 && records[0].length() > 1
-                            && PinyinHelper.getInstance().isPhone(records[2])) {
+                            // && (records[1].compareTo("男") == 0 || records[1].compareTo("女") == 0)
+                            && records[0].length() <= 4 && records[0].length() > 1) {
+                            // && PinyinHelper.getInstance().isPhone(records[2])) {
 
                     } else {
                         findViewById(R.id.totalin).setEnabled(false);
@@ -190,12 +192,26 @@ public class InActivity extends AppCompatActivity {
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
             String[] records = line.split("\\s+");
-            if (arrayList.contains(records[0] + records[1] + records[2])) {
+            String name;
+            String sex = "";
+            String phone = "";
+            String depart = "";
+            if (records.length > 3) {
+                depart = records[3];
+            }
+            if (records.length > 2) {
+                phone = records[2];
+            }
+            if (records.length > 1) {
+                sex = records[1];
+            }
+            name = records[0];
+            if (arrayList.contains(records[0] + sex + phone)) {
                 remains += line + "\t已经报名\n";
             } else if (!arrayList1.contains(records[0])) {
                 remains += line + "\t没有上课资格\n";
             } else {
-                MainActivity.db.insertContact(records[0], records[1], records[2], records[3], type, date);
+                MainActivity.db.insertContact(records[0], sex, phone, depart, type, date);
             }
         }
         et.setText(remains);
@@ -211,49 +227,53 @@ public class InActivity extends AppCompatActivity {
                     Uri uri = data.getData();
                     String path = FileUtils.getPath(this, uri);
                     Log.d("leizhou", path);
-
-                    try {
-                        String result = "";
-                        HSSFWorkbook wb = new HSSFWorkbook(new FileInputStream(path));
-                        org.apache.poi.ss.usermodel.Sheet sheet1 = wb.getSheetAt(0);
-                        for (Row row : sheet1) {
-                            int i = 0;
-                            String r1 = "";
-                            for (Cell cell : row) {
-                                if (i > 3) {
-                                    break;
-                                }
-
-                                CellReference cellRef = new CellReference(row.getRowNum(), cell.getColumnIndex());
-
-                                switch (cell.getCellType()) {
-                                    case Cell.CELL_TYPE_STRING:
-                                        r1 += " " + cell.getRichStringCellValue().getString();
-                                        break;
-                                    case Cell.CELL_TYPE_NUMERIC:
-                                        if (DateUtil.isCellDateFormatted(cell)) {
-                                            r1 += " " + String.valueOf(cell.getDateCellValue());
-                                        } else {
-                                            double phone = cell.getNumericCellValue();
-                                            r1 += " " + new DecimalFormat("###").format(phone);
-                                        }
-                                        break;
-                                    default:
-                                        System.out.println();
-                                }
-                                i++;
-                            }
-                            result += r1.substring(1) + "\n";
-                        }
-                        et.setText(result);
-                    } catch (Exception e) {
-
-                    }
+                    doRead(path);
 
                 }
                 break;
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void doRead(String path) {
+
+        try {
+            String result = "";
+            HSSFWorkbook wb = new HSSFWorkbook(new FileInputStream(path));
+            org.apache.poi.ss.usermodel.Sheet sheet1 = wb.getSheetAt(0);
+            for (Row row : sheet1) {
+                int i = 0;
+                String r1 = "";
+                for (Cell cell : row) {
+                    if (i > 3) {
+                        break;
+                    }
+
+                    CellReference cellRef = new CellReference(row.getRowNum(), cell.getColumnIndex());
+
+                    switch (cell.getCellType()) {
+                        case Cell.CELL_TYPE_STRING:
+                            r1 += " " + cell.getRichStringCellValue().getString();
+                            break;
+                        case Cell.CELL_TYPE_NUMERIC:
+                            if (DateUtil.isCellDateFormatted(cell)) {
+                                r1 += " " + String.valueOf(cell.getDateCellValue());
+                            } else {
+                                double phone = cell.getNumericCellValue();
+                                r1 += " " + new DecimalFormat("###").format(phone);
+                            }
+                            break;
+                        default:
+                            System.out.println();
+                    }
+                    i++;
+                }
+                result += r1.substring(1) + "\n";
+            }
+            et.setText(result);
+        } catch (Exception e) {
+
+        }
     }
 
     private void showFileChooser() {
